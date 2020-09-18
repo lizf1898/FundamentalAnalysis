@@ -3,36 +3,39 @@ import json
 import pandas as pd
 
 
-def available_companies():
+def available_companies(api_key):
     """
     Description
     ----
-    Gives all company names and tickers that are available for retrieval
-    of financial statements, ratios and extended stock data. General stock
+    Gives all tickers, company names, current price and stock exchange that are available
+    for retrieval for financial statements, ratios and extended stock data. General stock
     data can be retrieved for any company or financial instrument.
+
+    Input
+    ----
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
 
     Output
     ----
     data (dataframe)
-        Data with the ticker as the index and the company name in the column.
+        Data with the ticker as the index and the company name, price and
+        stock exchange in the columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/company/stock/list")
-    data = response.read().decode("utf-8")
-    data_json = json.loads(data)['symbolsList']
+    response = urlopen("https://financialmodelingprep.com/api/v3/stock/list?apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
 
-    ticker_list = {}
-    for ticker in data_json:
-        try:
-            ticker_list[ticker["symbol"]] = ticker['name']
-        except KeyError:
-            ticker_list[ticker["symbol"]] = ticker['symbol']
-    data_formatted = pd.DataFrame(ticker_list,
-                                  index=["name"]).T.sort_index()
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
 
-    return data_formatted
+    df = pd.DataFrame(data)
+    df.loc[df["name"].isna(), "name"] = df["symbol"]
+    df = df.set_index("symbol")
+
+    return df
 
 
-def profile(ticker):
+def profile(ticker, api_key):
     """
     Description
     ----
@@ -43,20 +46,26 @@ def profile(ticker):
     ----
     ticker (string)
         The company ticker (for example: "AAPL")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
 
     Output
     ----
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/company/profile/" + ticker)
-    data = response.read().decode("utf-8")
-    data_formatted = pd.DataFrame(json.loads(data)['profile'], index=['profile']).T
+    response = urlopen("https://financialmodelingprep.com/api/v3/profile/" + ticker + "?apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
+
+    data_formatted = pd.DataFrame(data).T
 
     return data_formatted
 
 
-def quote(ticker):
+def quote(ticker, api_key):
     """
     Description
     ----
@@ -67,20 +76,26 @@ def quote(ticker):
     ----
     ticker (string)
         The company ticker (for example: "AMD")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
 
     Output
     ----
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/quote/" + ticker)
-    data = response.read().decode("utf-8")
-    data_formatted = pd.DataFrame(json.loads(data)[0], index=["quote"]).T
+    response = urlopen("https://financialmodelingprep.com/api/v3/quote/" + ticker + "?apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
+
+    data_formatted = pd.DataFrame(data).T
 
     return data_formatted
 
 
-def enterprise(ticker, period="annual"):
+def enterprise(ticker, api_key, period="annual"):
     """
     Description
     ----
@@ -91,6 +106,8 @@ def enterprise(ticker, period="annual"):
     ----
     ticker (string)
         The company ticker (for example: "TSLA")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     period (string)
         Data period, this can be "annual" or "quarter".
 
@@ -99,10 +116,13 @@ def enterprise(ticker, period="annual"):
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/enterprise-value/" +
-                       ticker + "?period=" + period)
+    response = urlopen("https://financialmodelingprep.com/api/v3/enterprise-values/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
     data = response.read().decode("utf-8")
-    data_json = json.loads(data)['enterpriseValues']
+    data_json = json.loads(data)
+
+    if 'Error Message' in data_json:
+        raise ValueError(data_json['Error Message'])
 
     data_formatted = {}
     for data in data_json:
@@ -116,7 +136,7 @@ def enterprise(ticker, period="annual"):
     return pd.DataFrame(data_formatted)
 
 
-def rating(ticker):
+def rating(ticker, api_key):
     """
      Description
      ----
@@ -126,7 +146,9 @@ def rating(ticker):
      Input
      ----
      ticker (string)
-         The company ticker (for example: "MSFT")
+        The company ticker (for example: "MSFT")
+     api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
 
      Output
      ----
@@ -134,15 +156,19 @@ def rating(ticker):
         Data with variables in rows and the period in columns..
      """
     response = urlopen("https://financialmodelingprep.com/api/v3/company/rating/" +
-                       ticker)
+                       ticker + "?apikey=" + api_key)
     data = response.read().decode("utf-8")
     data_json = json.loads(data)
+
+    if 'Error Message' in data_json:
+        raise ValueError(data_json['Error Message'])
+
     data_formatted = pd.DataFrame(data_json["ratingDetails"]).T
 
     return data_formatted
 
 
-def discounted_cash_flow(ticker, period="annual"):
+def discounted_cash_flow(ticker, api_key, period="annual"):
     """
     Description
     ----
@@ -153,6 +179,8 @@ def discounted_cash_flow(ticker, period="annual"):
     ----
     ticker (string)
         The company ticker (for example: "UBER")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     period (string)
         Data period, this can be "annual" or "quarter".
 
@@ -161,10 +189,14 @@ def discounted_cash_flow(ticker, period="annual"):
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/company/discounted-cash-flow/" +
-                       ticker + "?period=" + period)
-    data = response.read().decode("utf-8")
-    data_json_current = json.loads(data)
+    response = urlopen("https://financialmodelingprep.com/api/v3/discounted-cash-flow/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
+
+    data_json_current = data[0]
 
     try:
         del data_json_current['symbol']
@@ -172,10 +204,14 @@ def discounted_cash_flow(ticker, period="annual"):
     except KeyError:
         pass
 
-    response = urlopen("https://financialmodelingprep.com/api/v3/company/historical-discounted-cash-flow/" +
-                       ticker + "?period=" + period)
-    data = response.read().decode("utf-8")
-    data_json = json.loads(data)['historicalDCF']
+    response = urlopen("https://financialmodelingprep.com/api/v3/historical-discounted-cash-flow/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
+
+    data_json = data[0]['historicalDCF']
 
     data_formatted = {}
 
@@ -193,3 +229,30 @@ def discounted_cash_flow(ticker, period="annual"):
         data_formatted[date] = data
 
     return pd.DataFrame(data_formatted)
+
+
+def earnings_calendar(api_key):
+    """
+    Description
+    ----
+    Gives information about the earnings date over the upcoming months including
+    the expected PE.
+
+    Input
+    ----
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
+
+    Output
+    ----
+    data (dataframe)
+        Data with variables in rows and the period in columns.
+    """
+    response = urlopen("https://financialmodelingprep.com/api/v3/earning_calendar/" +
+                       "?apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
+
+    return pd.DataFrame(data).set_index("date")

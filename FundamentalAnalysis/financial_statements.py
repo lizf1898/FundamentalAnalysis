@@ -3,7 +3,7 @@ import json
 import pandas as pd
 
 
-def income_statement(ticker, period="annual"):
+def income_statement(ticker, api_key, period="annual"):
     """
     Description
     ----
@@ -14,6 +14,8 @@ def income_statement(ticker, period="annual"):
     ----
     ticker (string)
         The company ticker (for example: "GOOGL")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     period (string)
         Data period, this can be "annual" or "quarter".
 
@@ -22,24 +24,28 @@ def income_statement(ticker, period="annual"):
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/financials/income-statement/" +
-                       ticker + "?period=" + period)
-    data = response.read().decode("utf-8")
-    data_json = json.loads(data)['financials']
+    response = urlopen("https://financialmodelingprep.com/api/v3/income-statement/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
 
     data_formatted = {}
-    for data in data_json:
+    for value in data:
         if period == "quarter":
-            date = data['date'][:7]
+            date = value['date'][:7]
         else:
-            date = data['date'][:4]
-        del data['date']
-        data_formatted[date] = data
+            date = value['date'][:4]
+        del value['date']
+        del value['symbol']
+
+        data_formatted[date] = value
 
     return pd.DataFrame(data_formatted)
 
 
-def balance_sheet_statement(ticker, period="annual"):
+def balance_sheet_statement(ticker, api_key, period="annual"):
     """
     Description
     ----
@@ -50,6 +56,8 @@ def balance_sheet_statement(ticker, period="annual"):
     ----
     ticker (string)
         The company ticker (for example: "RDS-B")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     period (string)
         Data period, this can be "annual" or "quarter".
 
@@ -58,24 +66,28 @@ def balance_sheet_statement(ticker, period="annual"):
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/" +
-                       ticker + "?period=" + period)
-    data = response.read().decode("utf-8")
-    data_json = json.loads(data)['financials']
+    response = urlopen("https://financialmodelingprep.com/api/v3/balance-sheet-statement/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
 
     data_formatted = {}
-    for data in data_json:
+    for value in data:
         if period == "quarter":
-            date = data['date'][:7]
+            date = value['date'][:7]
         else:
-            date = data['date'][:4]
-        del data['date']
-        data_formatted[date] = data
+            date = value['date'][:4]
+        del value['date']
+        del value['symbol']
+
+        data_formatted[date] = value
 
     return pd.DataFrame(data_formatted)
 
 
-def cash_flow_statement(ticker, period="annual"):
+def cash_flow_statement(ticker, api_key, period="annual"):
     """
     Description
     ----
@@ -86,6 +98,8 @@ def cash_flow_statement(ticker, period="annual"):
     ----
     ticker (string)
         The company ticker (for example: "NKE")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     period (string)
         Data period, this can be "annual" or "quarter".
 
@@ -94,18 +108,22 @@ def cash_flow_statement(ticker, period="annual"):
     data (dataframe)
         Data with variables in rows and the period in columns.
     """
-    response = urlopen("https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/" +
-                       ticker + "?period=" + period)
-    data = response.read().decode("utf-8")
-    data_json = json.loads(data)['financials']
+    response = urlopen("https://financialmodelingprep.com/api/v3/cash-flow-statement/" +
+                       ticker + "?period=" + period + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
 
     data_formatted = {}
-    for data in data_json:
+    for value in data:
         if period == "quarter":
-            date = data['date'][:7]
+            date = value['date'][:7]
         else:
-            date = data['date'][:4]
-        del data['date']
-        data_formatted[date] = data
+            date = value['date'][:4]
+        del value['date']
+        del value['symbol']
+
+        data_formatted[date] = value
 
     return pd.DataFrame(data_formatted)

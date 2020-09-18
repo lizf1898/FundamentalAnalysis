@@ -61,7 +61,7 @@ def stock_data(ticker, period="max", interval="1d", start=None, end=None):
     dates = []
     for ts in timestamp:
         if interval in ['1m', '2m', '5m', '15m',
-                        '30m', '60m', '1h']:
+                        '30m', '60m', '90m', '1h']:
             dates.append(datetime.fromtimestamp(int(ts)))
         else:
             dates.append(datetime.fromtimestamp(int(ts)).date())
@@ -75,7 +75,7 @@ def stock_data(ticker, period="max", interval="1d", start=None, end=None):
     return pd.DataFrame(indicators, index=dates)
 
 
-def stock_data_detailed(ticker, begin="1792-05-17", end=None):
+def stock_data_detailed(ticker, api_key, begin="1792-05-17", end=None):
     """
     Description
     ----
@@ -90,6 +90,8 @@ def stock_data_detailed(ticker, begin="1792-05-17", end=None):
     ----
     ticker (string)
         The company ticker (for example: "FIZZ")
+    api_key (string)
+        The API Key obtained from https://financialmodelingprep.com/developer/docs/
     begin (string)
         Begin date in the format %Y-%m-%d.
         Default is the beginning of the Stock Market: 1792-05-17.
@@ -103,21 +105,24 @@ def stock_data_detailed(ticker, begin="1792-05-17", end=None):
         Data with the date in the rows and the variables in the columns.
     """
     response = urlopen("https://financialmodelingprep.com/api/v3/historical-price-full/" +
-                       ticker + "?from=" + str(begin) + "&to=" + str(end))
-    data = response.read().decode("utf-8")
+                       ticker + "?from=" + str(begin) + "&to=" + str(end) + "&apikey=" + api_key)
+    data = json.loads(response.read().decode("utf-8"))
+
+    if 'Error Message' in data:
+        raise ValueError(data['Error Message'])
 
     try:
-        data_json = json.loads(data)['historical']
+        data_json = data['historical']
     except KeyError:
         raise ValueError("No data available. Please note this function "
                          "only takes a specific selection of companies." + '\n' +
                          "See: FundamentalAnalysis.available_companies()")
 
     data_formatted = {}
-    for data in data_json:
-        date = data['date']
-        del data['date']
-        data_formatted[date] = data
+    for value in data_json:
+        date = value['date']
+        del value['date']
+        data_formatted[date] = value
     data_formatted = pd.DataFrame(data_formatted).T
 
     return data_formatted
